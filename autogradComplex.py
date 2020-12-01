@@ -1,4 +1,5 @@
 import torch as t
+from collections import defaultdict
 
 class Ops:
 
@@ -27,4 +28,34 @@ class Add(Ops):
         self.grad = [(a,1), (b, 1)]
     
 class Mul(Ops):
-    
+
+    def __init__(self, a:Var, b:Var):
+        self.value = a.value * b.value
+        self.grad = [(a, b.value), (b, a.value)]
+
+class Sub(Ops):
+
+    def __init__(self, a:Var, b:Var):
+        self.value = a.value - b.value
+        self.grad = [(a, 1), (-b, 1)]
+
+class Div(Ops):
+
+    def __init__(self, a:Var, b:Var):
+        self.value = a.value/b.value
+        self.grad = [()]
+
+def gradients_val(parent_node):
+
+    gradients = defaultdict(lambda : 0)
+    stack = parent_node.grad.copy()
+
+    while stack:
+        node, value = stack.pop()
+        gradients[node] += value
+
+        if not isinstance(node, Var):
+            for child_node, child_route_value in node.grad:
+                stack.append((child_node, child_route_value * value))
+
+    return dict(gradients)  
